@@ -14,8 +14,8 @@ RUN apt-get update
 # Install essential tools in smaller chunks to avoid network issues
 RUN apt-get install -y python3 python3-pip python3-venv
 
-# Install network tools
-RUN apt-get install -y nmap nikto dirb curl wget net-tools iputils-ping
+# Install network tools and libcap2-bin for setcap
+RUN apt-get install -y nmap nikto dirb curl wget net-tools iputils-ping libcap2-bin
 
 # Install security tools (skip problematic ones for now)
 RUN apt-get install -y sudo
