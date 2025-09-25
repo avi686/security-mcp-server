@@ -12,6 +12,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     nmap \
     nikto \
     sqlmap \
@@ -31,7 +32,9 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
+# Create virtual environment and install Python dependencies
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy the server code
@@ -39,16 +42,20 @@ COPY security_server.py .
 
 # Create non-root user with necessary capabilities
 RUN useradd -m -u 1000 mcpuser && \
-    chown -R mcpuser:mcpuser /app
+    chown -R mcpuser:mcpuser /app && \
+    chown -R mcpuser:mcpuser /opt/venv
 
 # Set capabilities for network tools (required for raw sockets)
 RUN setcap cap_net_raw+ep /usr/bin/nmap
 
-# Update exploit database after user creation
+# Update exploit database (ignore errors)
 RUN searchsploit -u || true
 
 # Switch to non-root user
 USER mcpuser
+
+# Ensure virtual environment is active
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Run the server
 CMD ["python3", "security_server.py"]
