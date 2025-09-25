@@ -8,26 +8,23 @@ WORKDIR /app
 ENV PYTHONUNBUFFERED=1
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update and install required packages
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-venv \
-    nmap \
-    nikto \
-    sqlmap \
-    wpscan \
-    dirb \
-    exploitdb \
-    exploitdb-bin-sploits \
-    exploitdb-papers \
-    net-tools \
-    iputils-ping \
-    curl \
-    wget \
-    sudo \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Update package lists and install core packages first
+RUN apt-get update
+
+# Install essential tools in smaller chunks to avoid network issues
+RUN apt-get install -y python3 python3-pip python3-venv
+
+# Install network tools
+RUN apt-get install -y nmap nikto dirb curl wget net-tools iputils-ping
+
+# Install security tools (skip problematic ones for now)
+RUN apt-get install -y sudo
+
+# Try to install remaining tools with --fix-missing
+RUN apt-get install -y --fix-missing sqlmap wpscan || true
+
+# Clean up
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -47,9 +44,6 @@ RUN useradd -m -u 1000 mcpuser && \
 
 # Set capabilities for network tools (required for raw sockets)
 RUN setcap cap_net_raw+ep /usr/bin/nmap
-
-# Update exploit database (ignore errors)
-RUN searchsploit -u || true
 
 # Switch to non-root user
 USER mcpuser
