@@ -24,11 +24,9 @@ RUN apt-get update && apt-get install -y \
     iputils-ping \
     curl \
     wget \
+    sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# Update exploit database
-RUN searchsploit -u
 
 # Copy requirements first for better caching
 COPY requirements.txt .
@@ -45,6 +43,9 @@ RUN useradd -m -u 1000 mcpuser && \
 
 # Set capabilities for network tools (required for raw sockets)
 RUN setcap cap_net_raw+ep /usr/bin/nmap
+
+# Update exploit database after user creation
+RUN searchsploit -u || true
 
 # Switch to non-root user
 USER mcpuser
